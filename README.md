@@ -1,50 +1,71 @@
-# NextMove
-UON Market Place
+# NextMove — project plan (step-by-step)
 
-User ratings, 
+## Phase 0: Kickoff (Week 1)
+1. Supriya: write the requirements doc / project charter, get team sign-off
+2. Supriya: set up the task tracker (Trello / GitHub Projects)
+3. Whole team: initialize the shared GitHub repo — `backend/`, `frontend/`, `database/`, `installation.sh`
+4. Whole team: meet to align on the DB schema and API contract before any code is written
+5. Supriya: schedule a recurring weekly check-in
 
-Phase 1: Design & Architecture
-Designer: Home Page/browse, listing detail, post listing form login/signup, user dashboard, admin dashboard, admin listing moderation.
-finalize MySQL schema (users, listings, categories, images, messages, reports/flags), write schema.sql
-set up Vue project skeleton (routes, basic layout, Vuex/Pinia if you want state management), set up Azure Blob container (State Managerment is something like sharing the data between different components, like Pinia Store stores all the tokens like stuff and will be shared among them)
-turn StoryBoard (Ask Geoff suggested) + schema into a prioritized sprint plan — literally "Sprint 1 = auth + listing CRUD", "Sprint 2 = browse/search + messaging", etc.
+## Phase 1: Design & Architecture (Week 1–2)
+1. Jay: wireframe all core pages — home/browse, listing detail, post-listing form, login/signup, user dashboard, admin dashboard, admin listing moderation
+2. Jay + whole team: finalize the MySQL schema and write `schema.sql` — users, listings, categories, listing images, conversations, messages, reports/flags, favorites, ratings, **moderation_keywords**
+3. Include the trade fields (`is_tradeable`, `trade_notes`) and moderation fields (`auto_flagged`, `flagged_reason`, `on_hold` status) in the schema from the start, not bolted on later
+4. Set up the Vue project skeleton — routes, layout, Pinia store for auth token + user state
+5. Set up the Azure Blob Storage container for listing images
+6. Supriya: turn the wireframes + schema into the Sprint 1 / Sprint 2 backlog
 
-Core Build — Sprint 1 (Week 3–4)
-Auth + listings CRUD — the foundation everything else sits on.
-Chinna : signup/login endpoints, JWT issuing, UoN email domain check, password hashing; listing CRUD endpoints (create/read/update/delete/mark-sold)
-Karthik : login/signup pages, "post a listing" form (with image upload to Blob), listing detail page, "my listings" page.
-Jay : move from wireframes to actual CSS/styling as pages get built; build out the design system (colors, buttons, cards) so Karthik isn't guessing
-Kirthan: write test cases now, not later — for each user story, define pass/fail criteria before the feature is even done, so testing isn't a mad scramble in week 9
-Supriya : run the weekly check-in, chase blockers, update the tracker
-Deliverable: working signup/login + users can post/edit/delete a listing with a photo
+**Deliverable:** wireframes, finalized `schema.sql`, empty-but-running Vue + FastAPI apps, `installation.sh` works end to end
 
+## Phase 2: Core Build — Sprint 1 (Week 3–4)
+1. Chinna: build signup/login endpoints — JWT issuing, UoN email domain check, password hashing
+2. Chinna: build listing CRUD endpoints (create/read/update/delete/mark-sold), including the trade toggle fields and the auto-hold keyword scan on creation
+3. Karthik: build login/signup pages
+4. Karthik: build the post-a-listing form — image upload to Blob, trade toggle + notes field
+5. Karthik: build the listing detail page and "my listings" page
+6. Jay: style pages as they're built, establish the shared design system (colors, buttons, cards)
+7. Kirthan: write test cases per user story before each feature is finished, not after
+8. Supriya: run the weekly check-in, chase blockers, keep the tracker updated
 
-Phase 3: Core Build — Sprint 2 (Week 5–6)
-Browse, search, categories, messaging.
-Karthik : search/filter endpoints (category, price range, keyword), categories table + endpoints, in-app messaging endpoints (buyer→seller)
-CHinna: browse/search page with filters, category navigation, messaging UI (inbox + conversation view), favorites/watchlist
-Jay : polish browse/search UX — this is the page students will use most, worth extra attention
-Kirthan: start executing test cases against Sprint 1 features while Sprint 2 is being built (don't wait until everything's "done")
-Supriya: first informal demo to the team — everyone sees the app for the first time as a real user would
-Deliverable: full buyer/seller loop works — browse, find, message, arrange
+**Deliverable:** working signup/login; users can post/edit/delete a listing with a photo, optionally marked as tradeable; listings containing blocked keywords land in `on_hold` automatically
 
+## Phase 3: Core Build — Sprint 2 (Week 5–6)
+1. Karthik: build search/filter endpoints — category, price range, keyword, "open to trade"
+2. Karthik: build the categories table + endpoints
+3. Karthik: build in-app messaging endpoints — find-or-create conversation, send/poll messages, mark as read
+4. Chinna: build the browse/search page with filters (including "open to trade")
+5. Chinna: build category navigation
+6. Chinna: build the messaging UI — inbox list + conversation thread view
+7. Chinna: build favorites/watchlist
+8. Jay: polish browse/search UX — the page students will use most
+9. Kirthan: execute test cases against Sprint 1 features while Sprint 2 is being built
+10. Supriya: run the first informal demo to the whole team
 
-Phase 4: Admin Panel (Week 7)
-Karthik : admin-only endpoints (list all users, disable user, delete/moderate any listing, view reports queue) — protect with a role check, not just JWT presence
-Chinna: admin Vue views (separate route group, e.g. /admin/*, gated by role)
-Kirthan: specifically test that non-admin users cannot hit admin endpoints (this is the #1 thing markers/security-minded testers check)
-Supriya: confirm admin scope matches the brief's "must have an administrative section" requirement — check it off explicitly
-Deliverable: working admin panel — user management, listing moderation, reports queue
+**Deliverable:** full buyer/seller loop works — browse, find, message, arrange a sale or a trade
 
-Phase 5: Stretch Features (Week 8, only if on schedule)
-Pick from: ratings/reviews, report/flag flow, saved searches, map view for accommodation. Supriya's job here is triage — don't let the team start a stretch feature that can't be finished; better to polish MVP than half-build extras.
+## Phase 4: Admin Panel (Week 7)
+1. Karthik: build admin-only endpoints — list/disable users, moderate any listing, view the reports queue, approve/reject `on_hold` listings
+2. Karthik: build the admin dashboard stats endpoint — users (total/active/banned), listings (total/active/sold/on-hold/removed), pending reports vs pending auto-flags
+3. Chinna: build admin Vue views under `/admin/*`, gated by role
+4. Chinna: build the dashboard stats view, user management view, listing moderation view (with a separate on-hold queue), and reports/flags queue
+5. Kirthan: test that non-admin users cannot hit any admin endpoint — this is the #1 thing markers check
+6. Supriya: confirm admin scope matches the brief's "administrative section" requirement, check it off explicitly
 
-Phase 6: Testing & Hardening (Week 9)
-Kirthan: full regression pass, plus the security checks you flagged earlier — auth bypass attempts, file upload validation on the Blob upload endpoint
-Chinna/Karthik: bug fixing only, no new features
-Supriya: track bugs found  -  fixed  - verified in the tracker, freeze scope
+**Deliverable:** working admin panel — dashboard stats, user management, listing moderation (including on-hold approvals), reports queue
 
-Phase 7: Deployment & Report (Week 10)
-Supriya: compile the final report — this usually needs process documentation (sprints, roles, decisions made and why), not just the finished app
-Jay: final screenshots/demo video if required
-Whole team: rehearse the demo, make sure installation.sh genuinely works on a clean machine (test this on a laptop that isn't a dev's own — this catches a shocking number of last-minute failures)
+## Phase 5: Stretch Features (Week 8, only if on schedule)
+1. Supriya: triage which stretch features are realistic given time left
+2. Pick from: ratings/reviews, saved searches, map view for accommodation
+3. Whole team: don't start a stretch feature that can't be finished — better to polish the MVP than half-build extras
+
+## Phase 6: Testing & Hardening (Week 9)
+1. Kirthan: full regression pass across all features
+2. Kirthan: security checks — auth bypass attempts, IDOR on listings/conversations, file upload validation on the Blob endpoint, non-admin access to admin routes
+3. Chinna/Karthik: bug fixing only, no new features
+4. Supriya: track bugs found → fixed → verified in the tracker, freeze scope
+
+## Phase 7: Deployment & Report (Week 10)
+1. Supriya: compile the final report — process documentation (sprints, roles, decisions made and why)
+2. Jay: final screenshots / demo video
+3. Whole team: rehearse the demo
+4. Whole team: test `installation.sh` on a clean machine that isn't a dev's own laptop
