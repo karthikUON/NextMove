@@ -2,7 +2,7 @@
 
 ## Phase 0: Kickoff (Week 1)
 1. Supriya: write the requirements doc / project charter, get team sign-off
-2. Supriya: set up the task tracker (Trello / GitHub Projects)
+2. Supriya: set up the task tracker (GitHub Projects)
 3. Whole team: initialize the shared GitHub repo — `backend/`, `frontend/`, `database/`, `installation.sh`
 4. Whole team: meet to align on the DB schema and API contract before any code is written
 5. Supriya: schedule a recurring weekly check-in
