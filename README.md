@@ -1,71 +1,72 @@
-# NextMove — project plan (step-by-step)
+NextMove — project plan (step-by-step)
 
-## Phase 0: Kickoff (Week 1)
-1. Supriya: write the requirements doc / project charter, get team sign-off
-2. Supriya: set up the task tracker (GitHub Projects)
-3. Whole team: initialize the shared GitHub repo — `backend/`, `frontend/`, `database/`, `installation.sh`
-4. Whole team: meet to align on the DB schema and API contract before any code is written
-5. Supriya: schedule a recurring weekly check-in
+Phase 0: Kickoff (Week 1)
+Supriya: form the team, assign roles, set up the task tracker (GitHub Projects)
+Whole team: initialize the shared GitHub repo — backend/ (Django project), templates/, static/, installation.sh
+Whole team: meet to align on project scope before any code is written
+Supriya: schedule a recurring weekly check-in
+Deliverable: team formed, roles assigned, repo initialized
 
-## Phase 1: Design & Architecture (Week 1–2)
-1. Jay: wireframe all core pages — home/browse, listing detail, post-listing form, login/signup, user dashboard, admin dashboard, admin listing moderation
-2. Jay + whole team: finalize the MySQL schema and write `schema.sql` — users, listings, categories, listing images, conversations, messages, reports/flags, favorites, ratings, **moderation_keywords**
-3. Include the trade fields (`is_tradeable`, `trade_notes`) and moderation fields (`auto_flagged`, `flagged_reason`, `on_hold` status) in the schema from the start, not bolted on later
-4. Set up the Vue project skeleton — routes, layout, Pinia store for auth token + user state
-5. Set up the Azure Blob Storage container for listing images
-6. Supriya: turn the wireframes + schema into the Sprint 1 / Sprint 2 backlog
+Phase 1: Requirements Gathering (Week 2)
+Supriya + whole team: draft the feature list and user stories
+Whole team: review the feature list against the assignment brief
+Deliverable: agreed feature list to design against
 
-**Deliverable:** wireframes, finalized `schema.sql`, empty-but-running Vue + FastAPI apps, `installation.sh` works end to end
+Phase 2: Design — EER & Storyboard (Week 3)
+Jay: draft the EER diagram — users, categories, listings, listing_images, conversations, messages, favorites, reports, ratings, moderation_keywords, listing_flags
+Karthik + Chinna: draft the storyboard/wireframes for all core pages
+Whole team: review and sign off on both before development starts
+Deliverable: finalized EER diagram and storyboard
 
-## Phase 2: Core Build — Sprint 1 (Week 3–4)
-1. Chinna: build signup/login endpoints — JWT issuing, UoN email domain check, password hashing
-2. Chinna: build listing CRUD endpoints (create/read/update/delete/mark-sold), including the trade toggle fields and the auto-hold keyword scan on creation
-3. Karthik: build login/signup pages
-4. Karthik: build the post-a-listing form — image upload to Blob, trade toggle + notes field
-5. Karthik: build the listing detail page and "my listings" page
-6. Jay: style pages as they're built, establish the shared design system (colors, buttons, cards)
-7. Kirthan: write test cases per user story before each feature is finished, not after
-8. Supriya: run the weekly check-in, chase blockers, keep the tracker updated
+Phase 3: Dev Week 1 — Foundation: Skeleton, Custom User, Auth (Week 4)
+Karthik + Chinna: Django project skeleton — three apps (accounts, marketplace, messaging)
+Jay: custom User model (UoN email domain validation, is_verified flag) and the first migration — this must happen before any other migration
+Karthik + Chinna: signup, email-verification, login, and logout views + Bootstrap templates
+Kirthan: validate the full signup → verify → login flow end to end
+Supriya: run the weekly check-in, keep the tracker updated
+Deliverable: working signup/login gated on UoN email verification
 
-**Deliverable:** working signup/login; users can post/edit/delete a listing with a photo, optionally marked as tradeable; listings containing blocked keywords land in `on_hold` automatically
+Phase 4: Dev Week 2 — Homepage & Browse (Week 5)
+Jay: Category and Listing models, registered in Django admin, seeded with sample data
+Karthik: homepage view + template — recent listings, category quick-links
+Chinna: browse/search view + template — category, price, keyword, "open to trade", and sort filters
+Kirthan: validate the homepage and browse filters render and filter correctly
+Deliverable: homepage and browse page working against real listings
 
-## Phase 3: Core Build — Sprint 2 (Week 5–6)
-1. Karthik: build search/filter endpoints — category, price range, keyword, "open to trade"
-2. Karthik: build the categories table + endpoints
-3. Karthik: build in-app messaging endpoints — find-or-create conversation, send/poll messages, mark as read
-4. Chinna: build the browse/search page with filters (including "open to trade")
-5. Chinna: build category navigation
-6. Chinna: build the messaging UI — inbox list + conversation thread view
-7. Chinna: build favorites/watchlist
-8. Jay: polish browse/search UX — the page students will use most
-9. Kirthan: execute test cases against Sprint 1 features while Sprint 2 is being built
-10. Supriya: run the first informal demo to the whole team
+Phase 5: Dev Week 3 — Listing Detail & CRUD (Week 6)
+Jay: ListingImage model + migration
+Karthik: listing detail page — photo gallery, trade badge, owner vs. buyer actions
+Chinna: post/edit/delete/mark-sold views, multi-photo upload (local storage for now, not Azure), and the My Listings page
+Kirthan: validate CRUD, ownership checks (a user can't edit someone else's listing), and photo upload
+Deliverable: the full listing lifecycle working end to end, including photos
 
-**Deliverable:** full buyer/seller loop works — browse, find, message, arrange a sale or a trade
+Phase 6: Dev Week 4 — Moderation & Favorites (Week 7)
+Jay: ModerationKeyword, ListingFlag, and Favorite models
+Karthik: the auto-hold keyword scan, built into Listing.save()
+Chinna: favorites toggle + favorites page
+Kirthan: validate the auto-hold flow and the favorite toggle
+Deliverable: listings containing blocked keywords land in on_hold automatically; favorites work
 
-## Phase 4: Admin Panel (Week 7)
-1. Karthik: build admin-only endpoints — list/disable users, moderate any listing, view the reports queue, approve/reject `on_hold` listings
-2. Karthik: build the admin dashboard stats endpoint — users (total/active/banned), listings (total/active/sold/on-hold/removed), pending reports vs pending auto-flags
-3. Chinna: build admin Vue views under `/admin/*`, gated by role
-4. Chinna: build the dashboard stats view, user management view, listing moderation view (with a separate on-hold queue), and reports/flags queue
-5. Kirthan: test that non-admin users cannot hit any admin endpoint — this is the #1 thing markers check
-6. Supriya: confirm admin scope matches the brief's "administrative section" requirement, check it off explicitly
+Phase 7: Dev Week 5 — Messaging (Week 8)
+Jay: Conversation and Message models
+Karthik: the find-or-create conversation logic + inbox view
+Chinna: the inbox template (conversation list + thread view) and read receipts
+Kirthan: validate two-way messaging and access control — a non-participant must be blocked from viewing a conversation
+Deliverable: a buyer and seller can message each other about a listing
 
-**Deliverable:** working admin panel — dashboard stats, user management, listing moderation (including on-hold approvals), reports queue
+Phase 8: Dev Week 6 — Reports & Admin Dashboard (Week 9)
+Jay: Report model
+Karthik: report form, file_report_view, and admin bulk actions (approve/reject/mark reviewed)
+Chinna: the admin dashboard stats view + template
+Kirthan: validate the reporting flow and confirm the dashboard's figures match the database
+Supriya: confirm the admin scope matches the brief's "administrative section" requirement — check it off explicitly
+Deliverable: working reports queue and admin stats dashboard
 
-## Phase 5: Stretch Features (Week 8, only if on schedule)
-1. Supriya: triage which stretch features are realistic given time left
-2. Pick from: ratings/reviews, saved searches, map view for accommodation
-3. Whole team: don't start a stretch feature that can't be finished — better to polish the MVP than half-build extras
-
-## Phase 6: Testing & Hardening (Week 9)
-1. Kirthan: full regression pass across all features
-2. Kirthan: security checks — auth bypass attempts, IDOR on listings/conversations, file upload validation on the Blob endpoint, non-admin access to admin routes
-3. Chinna/Karthik: bug fixing only, no new features
-4. Supriya: track bugs found → fixed → verified in the tracker, freeze scope
-
-## Phase 7: Deployment & Report (Week 10)
-1. Supriya: compile the final report — process documentation (sprints, roles, decisions made and why)
-2. Jay: final screenshots / demo video
-3. Whole team: rehearse the demo
-4. Whole team: test `installation.sh` on a clean machine that isn't a dev's own laptop
+Phase 9: Dev Week 7 — MySQL Cutover & Full Regression (Week 10)
+Jay: seed_data management command, then the MySQL migration and cutover
+Karthik + Chinna: bug-fixing only, no new features
+Kirthan: a full end-to-end regression pass across every feature
+Supriya: compile the final report — process documentation (weeks, roles, decisions made and why); track bugs found → fixed → verified; freeze scope
+Whole team: rehearse the demo, and test installation.sh on a machine that isn't a dev's own laptop
+Stretch, only if the above finishes early: a "leave a rating" page for the existing Rating model (schema and admin browsing already exist, the buyer-facing form doesn't)
+Deliverable: a fully working app on real MySQL, regression-tested, ready for submission
