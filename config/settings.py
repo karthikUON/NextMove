@@ -78,7 +78,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "nextmove_prod",
         "USER": "root",
-        "PASSWORD": "Kalilinux",
+        "PASSWORD": "password",
         "HOST": "127.0.0.1",
         "PORT": "3306",
         "OPTIONS": {
