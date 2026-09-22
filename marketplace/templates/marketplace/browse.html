@@ -1,0 +1,76 @@
+{% extends "marketplace/base.html" %}
+{% block content %}
+<div class="row">
+  <aside class="col-md-3 mb-4">
+    <form method="get">
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Search</label>
+        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search listings...">
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Category</label>
+        <select name="category" class="form-select">
+          <option value="">All categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.slug }}" {% if cat.slug == current_category %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Campus</label>
+        <select name="campus" class="form-select">
+          <option value="">All campuses</option>
+          {% for value, label in campus_choices %}
+          <option value="{{ value }}" {% if value == current_campus %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label class="form-label small fw-semibold">Min price</label>
+          <input type="number" name="min_price" class="form-control" value="{{ request.GET.min_price }}">
+        </div>
+        <div class="col">
+          <label class="form-label small fw-semibold">Max price</label>
+          <input type="number" name="max_price" class="form-control" value="{{ request.GET.max_price }}">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Sort by</label>
+        <select name="sort" class="form-select">
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+          <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: low to high</option>
+          <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: high to low</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-success w-100">Apply filters</button>
+    </form>
+  </aside>
+
+  <div class="col-md-9">
+    <p class="text-muted small">{{ page_obj.paginator.count }} listing{{ page_obj.paginator.count|pluralize }} found</p>
+    {% if page_obj.object_list %}
+    <div class="row g-3">
+      {% for listing in page_obj %}
+        {% include "marketplace/_listing_card.html" %}
+      {% endfor %}
+    </div>
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4">
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="text-center py-5 text-muted border rounded">No listings match your filters.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
