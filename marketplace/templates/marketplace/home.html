@@ -1,0 +1,38 @@
+{% extends "marketplace/base.html" %}
+{% block content %}
+<div class="bg-success text-white rounded-4 text-center p-5 mb-5">
+  <h1 class="fw-bold">Buy, sell &amp; swap with fellow UoN students</h1>
+  <p class="lead">Furniture, textbooks, cars, accommodation and more &mdash; built for the UoN community.</p>
+  <a href="{% url 'browse' %}" class="btn btn-light fw-semibold">Browse listings</a>
+</div>
+
+<h2 class="h5 mb-3">Browse by category</h2>
+<div class="row row-cols-2 row-cols-md-4 g-3 mb-5">
+  {% for cat in categories %}
+  <div class="col">
+    <a href="{% url 'browse' %}?category={{ cat.slug }}" class="btn btn-outline-secondary w-100 py-3">{{ cat.name }}</a>
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="h5 mb-3">Browse by campus</h2>
+<div class="row row-cols-2 row-cols-md-4 g-3 mb-5">
+  {% for value, label in campus_choices %}
+  <div class="col">
+    <a href="{% url 'browse' %}?campus={{ value }}" class="btn btn-outline-success w-100 py-3">{{ label }}</a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h5 mb-0">Recently listed</h2>
+  <a href="{% url 'browse' %}" class="small text-success text-decoration-none">See all &rarr;</a>
+</div>
+<div class="row g-3">
+  {% for listing in recent %}
+    {% include "marketplace/_listing_card.html" %}
+  {% empty %}
+    <p class="text-muted">No listings yet. Run the seed command to add samples.</p>
+  {% endfor %}
+</div>
+{% endblock %}
