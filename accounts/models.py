@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 UON_DOMAINS = ("uon.edu.au", "newcastle.edu.au")
-
 def validate_uon_email(value):
     domain = value.split("@")[-1].lower()
     if domain not in UON_DOMAINS:
@@ -13,7 +12,7 @@ def validate_uon_email(value):
 class User(AbstractUser):
     email = models.EmailField(unique=True, validators=[validate_uon_email])
     is_verified = models.BooleanField(default=False)
-    # added otp attributes
+    # added otp attributes by karthik
     otp_code = models.CharField(max_length=6, blank=True, null=True)
     otp_created_at = models.DateTimeField(blank=True, null=True)
     otp_attempts = models.PositiveSmallIntegerField(default=0)
