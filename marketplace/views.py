@@ -1,11 +1,14 @@
-from django.core.paginator import Paginator
+    from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render
 from .models import Category, Listing
 
 
 def home_view(request):
+    # HOMEPAGE — runs when someone visits 
     recent = Listing.objects.filter(status="active").select_related("category")[:8]
+     # Get the 8 newest active listings (category fetched in the same query for speed).
+     # Send the categories, the 4 campuses, and the recent listings to the homepage template.
     return render(request, "marketplace/home.html", {
         "categories": Category.objects.all(),
         "recent": recent,
@@ -14,8 +17,9 @@ def home_view(request):
 
 
 def browse_view(request):
+    # Start with ALL active listings
     listings = Listing.objects.filter(status="active").select_related("category")
-
+   # Read each filter value from the URL (e.g. /browse/?campus=sydney)
     category_slug = request.GET.get("category", "")
     campus = request.GET.get("campus", "")
     q = request.GET.get("q", "")
