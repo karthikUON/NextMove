@@ -1,5 +1,6 @@
 {% extends "marketplace/base.html" %}
 {% block content %}
+<!-- main home screen of Nextmove  -->
 <div class="bg-success text-white rounded-4 text-center p-5 mb-5">
   <h1 class="fw-bold">Buy, sell &amp; swap with fellow UoN students</h1>
   <p class="lead">Furniture, textbooks, cars, accommodation and more &mdash; built for the UoN community.</p>
@@ -28,6 +29,7 @@
   <h2 class="h5 mb-0">Recently listed</h2>
   <a href="{% url 'browse' %}" class="small text-success text-decoration-none">See all &rarr;</a>
 </div>
+<!-- grid of recenly listed item cards  -->
 <div class="row g-3">
   {% for listing in recent %}
     {% include "marketplace/_listing_card.html" %}

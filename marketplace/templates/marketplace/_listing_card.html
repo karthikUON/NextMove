@@ -1,9 +1,14 @@
+<!-- this one is a reusable card for a single listing, included inside a loop -->
+<!-- Bootstrap grid column,  2 cards per row on phones, 3 on tablets, 4 on desktop -->
 <div class="col-6 col-md-4 col-lg-3">
   <div class="card h-100 listing-card shadow-sm">
+  {# Placeholder image, unique per listing via its id #}
     <img src="https://picsum.photos/seed/nextmove-{{ listing.id }}/640/440" class="card-img-top" alt="{{ listing.title }}">
     <div class="card-body py-2">
+{# The listing title. text-truncate cuts it off with "..." if it is too long to fit on one line #}
       <p class="fw-semibold mb-0 text-truncate">{{ listing.title }}</p>
       <p class="text-success fw-bold mb-0">
+        {# Show the price if it's above 0$; otherwise show "Free / Enquire" (eg for jobs, giveaways, etc.) #}
         {% if listing.price > 0 %}${{ listing.price }}{% else %}Free / Enquire{% endif %}
       </p>
       <p class="text-muted small mb-0">{{ listing.category.name }} &middot; {{ listing.get_campus_display }}</p>

@@ -1,12 +1,16 @@
 {% extends "marketplace/base.html" %}
 {% block content %}
 <div class="row">
+  <!-- left sidebar, filter form  -->
   <aside class="col-md-3 mb-4">
+    <!-- Django method puths the filter into the URL -->
     <form method="get">
+      <!-- search box -->
       <div class="mb-3">
         <label class="form-label small fw-semibold">Search</label>
         <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search listings...">
       </div>
+      <!-- category dropdown -->
       <div class="mb-3">
         <label class="form-label small fw-semibold">Category</label>
         <select name="category" class="form-select">
@@ -16,6 +20,7 @@
           {% endfor %}
         </select>
       </div>
+      <!-- campus dopdown feature -->
       <div class="mb-3">
         <label class="form-label small fw-semibold">Campus</label>
         <select name="campus" class="form-select">
@@ -25,6 +30,7 @@
           {% endfor %}
         </select>
       </div>
+      <!-- price range filters, will diplay a two boxes side by side min and max -->
       <div class="row g-2 mb-3">
         <div class="col">
           <label class="form-label small fw-semibold">Min price</label>
@@ -35,6 +41,7 @@
           <input type="number" name="max_price" class="form-control" value="{{ request.GET.max_price }}">
         </div>
       </div>
+      <!-- sort dropdown  -->
       <div class="mb-3">
         <label class="form-label small fw-semibold">Sort by</label>
         <select name="sort" class="form-select">
@@ -43,13 +50,16 @@
           <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: high to low</option>
         </select>
       </div>
+      <!-- Submit button. after submitting th form the browser will re run with all given filters   -->
       <button type="submit" class="btn btn-success w-100">Apply filters</button>
     </form>
   </aside>
 
+  <!-- results after applying the filters, will display on right side of the page -->
   <div class="col-md-9">
     <p class="text-muted small">{{ page_obj.paginator.count }} listing{{ page_obj.paginator.count|pluralize }} found</p>
     {% if page_obj.object_list %}
+    <!-- page controlls -->
     <div class="row g-3">
       {% for listing in page_obj %}
         {% include "marketplace/_listing_card.html" %}
