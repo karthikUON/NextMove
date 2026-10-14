@@ -3,10 +3,14 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 UON_DOMAINS = ("uon.edu.au", "newcastle.edu.au")
+
+
 def validate_uon_email(value):
     domain = value.split("@")[-1].lower()
     if domain not in UON_DOMAINS:
-        raise ValidationError("Please use your UoN email address (@uon.edu.au or @newcastle.edu.au).")
+        raise ValidationError(
+            "Please use your UoN email address (@uon.edu.au or @newcastle.edu.au)."
+        )
 
 
 class User(AbstractUser):

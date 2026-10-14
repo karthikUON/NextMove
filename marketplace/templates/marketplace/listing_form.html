@@ -1,0 +1,84 @@
+{% extends "marketplace/base.html" %}
+{% block title %}{% if editing %}Edit listing{% else %}Post a listing{% endif %}{% endblock %}
+{% block content %}
+<div class="col-lg-7 mx-auto">
+    {# heading: edit or post #}
+    <h1 class="h4 fw-bold mb-3">
+        {% if editing %}Edit listing{% else %}Post a listing{% endif %}
+    </h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {% for field in form %}
+        {# when editing, the current photos are shown just above the upload box #}
+        {% if field.name == "images" and editing and existing_images %}
+        <div class="mb-3">
+            <label class="form-label">Current photos</label>
+            <div class="d-flex flex-wrap gap-3">
+                {% for img in existing_images %}
+                <div class="text-center small">
+                    <img src="{{ img.image.url }}" class="rounded border"
+                        style="height:90px;width:90px;object-fit:cover"><br>
+                    <label>
+                        <input type="radio" name="cover" value="{{ img.pk }}"
+                            {% if img.is_primary %}checked{% endif %}> Cover
+                    </label><br>
+                    <label class="text-danger">
+                        <input type="checkbox" name="delete_images" value="{{ img.pk }}"> Remove
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mb-3" {% if field.name == "trade_notes" %}id="tradeNotesRow"{% endif %}>
+            {% if field.field.widget.input_type == "checkbox" %}
+            <div class="form-check">
+                {{ field }}
+                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            </div>
+            {% else %}
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.name == "images" %}
+            <div class="form-text">
+                Up to 6 photos (JPEG, PNG, WebP or GIF, 5 MB each).
+                The first one you upload becomes the cover photo.
+            </div>
+            {% endif %}
+            {% endif %}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-success">
+            {% if editing %}Save changes{% else %}Post listing{% endif %}
+        </button>
+        <a href="{% if editing %}{% url 'listing_detail' listing.pk %}{% else %}{% url 'browse' %}{% endif %}"
+            class="btn btn-link">Cancel</a>
+    </form>
+</div>
+
+<script>
+    (function () {
+        // Get the checkbox and the trade notes row
+        var box = document.getElementById('id_is_tradeable');
+        var row = document.getElementById('tradeNotesRow');
+
+        function sync() {
+            row.style.display = box.checked ? '' : 'none';
+        }
+
+        // Update visibility whenever the checkbox changes
+        box.addEventListener('change', sync);
+
+        // Set the correct visibility when the page first loads
+        sync();
+    })();
+</script>
+{% endblock %}

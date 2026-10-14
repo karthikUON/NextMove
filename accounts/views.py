@@ -6,6 +6,7 @@ from .forms import SignupForm, OTPForm, ResetPasswordForm
 from .models import User
 from .utils import send_otp_email, check_otp, is_locked, lockout_message, can_send_otp
 
+
 # signup method, get the form details, send the otp and verify
 def signup_view(request):
     if request.method == "POST":
@@ -22,7 +23,9 @@ def signup_view(request):
 
 # get the email, if clocked and pass the otp form
 def verify_email_view(request):
-    email = request.GET.get("email") or request.session.get("pending_verification_email")
+    email = request.GET.get("email") or request.session.get(
+        "pending_verification_email"
+    )
     user = get_object_or_404(User, email=email) if email else None
     locked = is_locked(user) if user else False
     error = lockout_message(user) if (user and locked) else None
@@ -39,20 +42,30 @@ def verify_email_view(request):
             error = result["error"]
             locked = result["locked"]
 
-    return render(request, "accounts/verify_email.html", {"email": email, "form": otp_form, "error": error, "locked": locked})
+    return render(
+        request,
+        "accounts/verify_email.html",
+        {"email": email, "form": otp_form, "error": error, "locked": locked},
+    )
+
 
 # this method helps to resend_otp_view and make the changes
 def resend_otp_view(request):
     if request.method == "POST":
-        email = request.POST.get("email") or request.session.get("pending_verification_email")
+        email = request.POST.get("email") or request.session.get(
+            "pending_verification_email"
+        )
         user = get_object_or_404(User, email=email)
         if can_send_otp(user):
             send_otp_email(user)
             messages.info(request, "A new verification code has been sent.")
         else:
-            messages.warning(request, "Please wait a minute before requesting another code.")
+            messages.warning(
+                request, "Please wait a minute before requesting another code."
+            )
         request.session["pending_verification_email"] = user.email
     return redirect("verify_email")
+
 
 # login view check if email/pass and and auth_login from django
 def login_view(request):
@@ -72,8 +85,11 @@ def login_view(request):
             messages.error(request, "Please verify your email before logging in.")
         else:
             auth_login(request, user)
-            return redirect("home")  # TEMP: change to "home" once Week 5's homepage URL exists
+            return redirect(
+                "home"
+            )  # TEMP: change to "home" once Week 5's homepage URL exists
     return render(request, "accounts/login.html")
+
 
 # logout view for now it is login but needs to be home
 def logout_view(request):
@@ -84,6 +100,7 @@ def logout_view(request):
 @login_required
 def profile_view(request):
     return render(request, "accounts/profile.html")
+
 
 # New method for forgot password
 def forgot_password_view(request):
@@ -102,6 +119,7 @@ def forgot_password_view(request):
         messages.info(request, "If that email is registered, a code has been sent.")
         return redirect("reset_verify")
     return render(request, "accounts/forgot_password.html")
+
 
 # reset vieew
 def reset_verify_view(request):
@@ -128,7 +146,12 @@ def reset_verify_view(request):
                     return redirect("reset_password")
                 error, locked = result["error"], result["locked"]
     # return the reset verify with the email, form, and if any weeoes
-    return render(request, "accounts/reset_verify.html", {"email": email, "form": form, "error": error, "locked": locked})
+    return render(
+        request,
+        "accounts/reset_verify.html",
+        {"email": email, "form": form, "error": error, "locked": locked},
+    )
+
 
 # Method to reset the password
 def reset_password_view(request):
@@ -138,7 +161,7 @@ def reset_password_view(request):
     user = User.objects.filter(email=email).first() if email else None
     if user is None:
         return redirect("forgot_password")
-    # check the post reequest 
+    # check the post reequest
     if request.method == "POST":
         form = ResetPasswordForm(user, request.POST)
         if form.is_valid():

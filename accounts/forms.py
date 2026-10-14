@@ -7,8 +7,12 @@ class SignupForm(UserCreationForm):
     class Meta:
         model = User
         fields = ["first_name", "email"]
-        widgets = { "first_name": forms.TextInput(attrs={"class": "form-control"}), 
-                    "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "you@uon.edu.au"}), }
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(
+                attrs={"class": "form-control", "placeholder": "you@uon.edu.au"}
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,13 +28,22 @@ class SignupForm(UserCreationForm):
         if commit:
             user.save()
         return user
-    
+
+
 class OTPForm(forms.Form):
     otp_code = forms.CharField(
-        max_length=6, min_length=6,
-        widget=forms.TextInput(attrs={"class": "form-control text-center", "placeholder": "6-digit code", "autofocus": True}),
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control text-center",
+                "placeholder": "6-digit code",
+                "autofocus": True,
+            }
+        ),
         label="Verification code",
     )
+
 
 class ResetPasswordForm(SetPasswordForm):
     def __init__(self, *args, **kwargs):
