@@ -18,6 +18,14 @@
       <div>
         <a class="nav-link d-inline px-2" href="{% url 'home' %}">Home</a>
         <a class="nav-link d-inline px-2" href="{% url 'browse' %}">Browse</a>
+        <!-- added signup and signin -->
+        {% if user.is_authenticated %}
+          <span class="navbar-text px-2">{{ user.first_name|default:user.email }}</span>
+          <a class="nav-link d-inline px-2" href="{% url 'logout' %}">Log out</a>
+        {% else %}
+          <a class="nav-link d-inline px-2" href="{% url 'login' %}">Log in</a>
+          <a class="btn btn-success btn-sm ms-2" href="{% url 'signup' %}">Sign up</a>
+        {% endif %}  
       </div>
     </div>
   </nav>

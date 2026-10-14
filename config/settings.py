@@ -85,7 +85,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "nextmove_prod",
         "USER": "root",
-        "PASSWORD": "Kalilinux",
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
         "HOST": "127.0.0.1",
         "PORT": "3306",
         "OPTIONS": {
@@ -151,9 +151,7 @@ MAILERS = {
     },
 }
 DEFAULT_FROM_EMAIL = os.environ.get('GMAIL_ADDRESS', '') or 'noreply@nextmove.local'
-DEFAULT_FROM_EMAIL = os.environ.get('GMAIL_ADDRESS', '') or 'noreply@nextmove.local'
 
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'marketplace'

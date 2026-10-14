@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, SetPasswordForm
 from .models import User
 
 
@@ -31,3 +31,9 @@ class OTPForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control text-center", "placeholder": "6-digit code", "autofocus": True}),
         label="Verification code",
     )
+
+class ResetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-control"
