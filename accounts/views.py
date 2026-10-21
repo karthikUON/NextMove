@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .forms import SignupForm, OTPForm, ResetPasswordForm
 from .models import User
 from .utils import send_otp_email, check_otp, is_locked, lockout_message, can_send_otp
+from django.utils.http import url_has_allowed_host_and_scheme
 
 
 # signup method, get the form details, send the otp and verify
@@ -69,6 +70,13 @@ def resend_otp_view(request):
 
 # login view check if email/pass and and auth_login from django
 def login_view(request):
+    # where to go after logging in (login_required adds ?next=/the/page/ when it sends someone here)
+    next_url = request.POST.get("next") or request.GET.get("next", "")
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = ""
+
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
@@ -85,9 +93,9 @@ def login_view(request):
             messages.error(request, "Please verify your email before logging in.")
         else:
             auth_login(request, user)
-            return redirect(
-                "home"
-            )  # TEMP: change to "home" once Week 5's homepage URL exists
+            return redirect(next_url or "home")
+    elif next_url:
+        messages.info(request, "Please log in to continue.")
     return render(request, "accounts/login.html")
 
 

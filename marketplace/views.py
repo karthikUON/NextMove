@@ -75,6 +75,7 @@ def _ensure_primary(listing):
         first.is_primary = True
         first.save(update_fields=["is_primary"])
 
+@login_required
 # detailed view of the listings
 def listing_detail_view(request, pk):
     listing = get_object_or_404(Listing.objects.select_related("category", "seller"), pk=pk)

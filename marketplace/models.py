@@ -17,7 +17,7 @@ class Listing(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
         ("sold", "Sold"),
-        # added the removed which is for sold delete flag
+        # added the removed which is for sof delete flag
         ("removed", "Removed"),
     ]
 

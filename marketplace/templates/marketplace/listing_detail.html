@@ -1,15 +1,15 @@
-<!-- extend the base -->
 {% extends "marketplace/base.html" %}
+{# Listing detail page. Login is enforced by @login_required on the view, so only logged-in students get here. #}
 {% block title %}{{ listing.title }}{% endblock %}
 {% block content %}
-<!-- check if the status is removed -->
+{# a deleted listing can only be opened by its owner (the view gives everyone else a 404) #}
 {% if listing.status == "removed" %}
-<!-- show the lsiting is deleted -->
 <div class="alert alert-warning">This listing has been deleted. Only you can see it.</div>
 {% endif %}
+
 <div class="row g-4">
     <div class="col-lg-7">
-        <!-- if images -->
+        {# photo gallery: big cover photo, plus clickable thumbnails when there are several #}
         {% if images %}
         <img id="mainPhoto" src="{{ images.0.image.url }}" class="img-fluid rounded w-100"
             style="max-height:420px;object-fit:cover" alt="{{ listing.title }}">
@@ -22,7 +22,7 @@
         </div>
         {% endif %}
         {% else %}
-        <!-- if no photo -->
+        {# no photo uploaded #}
         <div class="bg-light border rounded d-flex align-items-center justify-content-center text-muted"
             style="height:320px">No photo</div>
         {% endif %}
@@ -30,19 +30,16 @@
 
     <div class="col-lg-5">
         <div class="mb-2">
-            <!-- show as listing is sold -->
             {% if listing.status == "sold" %}<span class="badge bg-secondary">Sold</span>{% endif %}
-            <!-- show if is tradable -->
             {% if listing.is_tradeable %}<span class="badge bg-success">Open to trade</span>{% endif %}
         </div>
-        <!-- add the listing titie. -->
+
         <h1 class="h3 fw-bold">{{ listing.title }}</h1>
-        <!-- check if the listing price==0 whichh is free -->
-         <p class="h4 text-success">
-          {% if listing.price == 0 %}Free{% else %}${{ listing.price|floatformat:2 }}{% endif %}
+        {# a price of 0 is shown as Free #}
+        <p class="h4 text-success">
+            {% if listing.price == 0 %}Free{% else %}${{ listing.price|floatformat:2 }}{% endif %}
         </p>
 
-        <!-- check is_tradable -->
         {% if listing.is_tradeable and listing.trade_notes %}
         <div class="alert alert-success py-2 small"><strong>Would trade for:</strong> {{ listing.trade_notes }}</div>
         {% endif %}
@@ -50,24 +47,23 @@
         <ul class="list-unstyled text-muted small mb-3">
             <li>Category: {{ listing.category.name }}</li>
             <li>
-              Campus: {{ listing.get_campus_display }}
-              {% if listing.location %} &middot; {{ listing.location }}{% endif %}
+                Campus: {{ listing.get_campus_display }}
+                {% if listing.location %} &middot; {{ listing.location }}{% endif %}
             </li>
             <li>Posted {{ listing.created_at|date:"j M Y" }} by {{ listing.seller.first_name|default:"a UoN student" }}
             </li>
         </ul>
-        <!-- chekc if the status is removed -->
+
+        {# owner-only actions #}
         {% if is_owner and listing.status != "removed" %}
         <div class="card mb-3">
             <div class="card-body">
                 <a href="{% url 'edit_listing' listing.pk %}" class="btn btn-outline-success btn-sm">Edit</a>
-                <!-- check the listing is active -->
                 {% if listing.status == "active" %}
                 <form method="post" action="{% url 'mark_sold' listing.pk %}" class="d-inline">
                     {% csrf_token %}<button type="submit" class="btn btn-outline-secondary btn-sm">Mark as sold</button>
                 </form>
                 {% endif %}
-                <!-- check the delete button if user wants to delet -->
                 <form method="post" action="{% url 'delete_listing' listing.pk %}" class="d-inline"
                     onsubmit="return confirm('Delete this listing?');">
                     {% csrf_token %}<button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -84,8 +80,8 @@
 <div>{{ listing.description|linebreaks }}</div>
 
 <script>
+    // clicking a thumbnail swaps it into the big photo
     document.querySelectorAll('.thumb').forEach(function (t) {
-        // add a listened to the main photo
         t.addEventListener('click', function () { document.getElementById('mainPhoto').src = t.src; });
     });
 </script>
