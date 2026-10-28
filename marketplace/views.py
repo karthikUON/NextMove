@@ -8,7 +8,19 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import ListingForm
-from .models import Category, Listing, ListingImage
+#added fav in w7
+from .models import Category,Favorite, Listing, ListingImage
+
+# Week 7: the set of listing IDs the current user has favorited.
+# This card template uses it to decide, filled heart or empty heart? which indicates the favs
+def _favorited_ids(request):
+    if request.user.is_authenticated:
+        return set(
+            Favorite.objects.filter(user=request.user).values_list("listing_id", flat=True)
+        )
+    # not logged in, no favorites, so every heart shows empty
+    return set()   
+
 
 
 def home_view(request):
@@ -17,6 +29,8 @@ def home_view(request):
         "categories": Category.objects.all(),
         "recent": recent,
         "campus_choices": Listing.CAMPUS_CHOICES,
+        #added in week 7 
+        "favorited_ids": _favorited_ids(request),   
     })
 
 
@@ -59,6 +73,8 @@ def browse_view(request):
         "query": q,
         "sort": sort,
         "campus_choices": Listing.CAMPUS_CHOICES,
+        #added in week 7
+        "favorited_ids": _favorited_ids(request),   
     })
 
 # save a new images, create the images
@@ -86,6 +102,8 @@ def listing_detail_view(request, pk):
         "listing": listing,
         "images": list(listing.images.filter(is_deleted=False)),  # cover photo first
         "is_owner": is_owner,
+    #added in w7, tells the detail page whether this listing is saved.
+        "is_favorited": request.user.is_authenticated and listing.pk in _favorited_ids(request),  
     })
 
 # only login users
@@ -169,3 +187,40 @@ def delete_listing_view(request, pk):
     listing.save(update_fields=["status"])
     messages.success(request, "Listing deleted.")
     return redirect("browse")
+
+
+# Week 7: Favorites
+#user must login
+@login_required          
+@require_POST            
+def toggle_favorite_view(request, pk):
+    """One button that both saves and un-saves."""
+    listing = get_object_or_404(Listing, pk=pk)
+    # get_or_create tries to find the favorite; if it's not there it makes it.
+    # 'created' is True if it was just made, False if it already existed.
+    favorite, created = Favorite.objects.get_or_create(user=request.user, listing=listing)
+    if created:
+        messages.success(request, "Saved to your favorites.")
+    else:
+    #already added to favs then click to remove from fav
+        favorite.delete()                
+        messages.info(request, "Removed from your favorites.")
+    # send the student/user back to whatever page they clicked from
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+    return redirect(next_url or "browse")
+
+
+@login_required
+def favorites_view(request):
+    """The 'My favorites' page."""
+    favorites = (
+        Favorite.objects.filter(user=request.user)
+    # one query, no N+1
+        .select_related("listing", "listing__category")   
+    )
+    listings = [f.listing for f in favorites]  
+    return render(request, "marketplace/favorites.html", {
+        "listings": listings,
+    #tells the user every one here IS a favorite, fav tab
+        "favorited_ids": {l.pk for l in listings},   
+    })

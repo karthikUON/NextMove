@@ -55,6 +55,14 @@
             <a class="nav-link {% if request.resolver_match.url_name == 'browse' %}active{% endif %}"
                href="{% url 'browse' %}">Browse</a>
           </li>
+          <!-- added in week 7 favs -->
+           <!-- Only shows when logged in; the active class highlights it when you’re on the favorites page.   -->
+                    {% if user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}"
+               href="{% url 'favorites' %}">❤️ Saved</a>
+          </li>
+          {% endif %}
         </ul>
 
         <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">

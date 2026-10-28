@@ -1,4 +1,4 @@
-<div class="col-6 col-md-4 col-lg-3">
+<div class="col-6 col-md-4 col-lg-3 position-relative">
   <a href="{% url 'listing_detail' listing.pk %}" class="text-decoration-none text-body">
     <div class="card h-100 listing-card shadow-sm">
       {% with cover=listing.primary_image %}
@@ -18,5 +18,18 @@
         <p class="text-muted small mb-0">{{ listing.category.name }} &middot; {{ listing.get_campus_display }}</p>
       </div>
     </div>
+      {# Week 7: heart button.  #}
+  {# is invalid HTML and would break clicking the card. #}
+  {% if user.is_authenticated %}
+  <form method="post" action="{% url 'toggle_favorite' listing.pk %}"
+        class="position-absolute" style="top:.6rem; right:1.4rem; z-index:2;">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" class="btn btn-sm btn-light rounded-circle shadow-sm px-2 py-1"
+            title="{% if listing.pk in favorited_ids %}Remove from favorites{% else %}Save to favorites{% endif %}">
+      {% if listing.pk in favorited_ids %}❤️{% else %}🤍{% endif %}
+    </button>
+  </form>
+  {% endif %}
   </a>
 </div>

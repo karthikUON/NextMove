@@ -53,7 +53,18 @@
             <li>Posted {{ listing.created_at|date:"j M Y" }} by {{ listing.seller.first_name|default:"a UoN student" }}
             </li>
         </ul>
-
+    {# Week 7: any logged-in student can save this listing #}
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'toggle_favorite' listing.pk %}" class="mb-3">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        {% if is_favorited %}
+        <button type="submit" class="btn btn-outline-danger btn-sm">❤️ Saved — remove from favorites</button>
+        {% else %}
+        <button type="submit" class="btn btn-outline-success btn-sm">🤍 Save to favorites</button>
+        {% endif %}
+    </form>
+    {% endif %}
         {# owner-only actions #}
         {% if is_owner and listing.status != "removed" %}
         <div class="card mb-3">

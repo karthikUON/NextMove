@@ -139,7 +139,6 @@ STATIC_URL = "static/"
 MAILERS = {
     "default": {
         "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
-        # here should definely be in the options
         "OPTIONS": {
             "host": "smtp.gmail.com",
             "port": 587,
