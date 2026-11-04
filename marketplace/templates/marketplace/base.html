@@ -1,3 +1,4 @@
+{% load messaging_tags %}
 <!doctype html>
 <html lang="en">
 
@@ -109,6 +110,12 @@
               href="{% url 'my_listings' %}">
               My listings
             </a>
+          </li>
+          <!-- added this below by karthik for inbox -->
+          {% unread_message_count as unread %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}"
+              href="{% url 'inbox' %}">Messages{% if unread %} <span class="badge bg-danger">{{ unread }}</span>{% endif%}</a>
           </li>
           {% endif %}
         </ul>
