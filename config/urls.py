@@ -9,6 +9,8 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("admin/", admin.site.urls),
     path("", include("marketplace.urls")),
+    path("", include("messaging.urls")),
+    path("", include("marketplace.urls")),
 ]
 
 # added by karthik - development only: serve uploaded photos from /media/ (works while DEBUG = True)

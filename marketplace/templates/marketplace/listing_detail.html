@@ -1,4 +1,4 @@
-{% extends "marketplace/base.html" %}
+{% extends "marketplace/base.html" %} {% load messaging_tags %}
 {# Listing detail page. Login is enforced by @login_required on the view, so only logged-in students get here. #}
 {% block title %}{{ listing.title }}{% endblock %}
 {% block content %}
@@ -105,6 +105,7 @@
         </div>
         {% endif %}
         {# Week 8: "Message seller" button goes here for visitors who aren't the owner #}
+        {% message_seller_box listing %}
     </div>
 </div>
 

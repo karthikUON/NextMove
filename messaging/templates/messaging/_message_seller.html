@@ -1,0 +1,12 @@
+{% if conversation %}
+<!-- view the conversation -->
+<a href="{% url 'conversation' conversation.pk %}" class="btn btn-success btn-sm mb-3">View your conversation</a>
+{% elif can_start %}
+<form method="post" action="{% url 'start_conversation' listing.pk %}" class="mb-3">
+    {% csrf_token %}
+    <label for="id_body" class="form-label fw-semibold">Message the seller</label>
+    <textarea name="body" id="id_body" class="form-control mb-2" rows="3" maxlength="2000" required
+        placeholder="Hi, is this still available?"></textarea>
+    <button type="submit" class="btn btn-success btn-sm">Send message</button>
+</form>
+{% endif %}
