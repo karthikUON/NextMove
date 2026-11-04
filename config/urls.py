@@ -5,9 +5,11 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # added this by karthik for accounts
     path("accounts/", include("accounts.urls")),
+    path("admin/", admin.site.urls),
     path("", include("marketplace.urls")),
 ]
 
-# development only: serve uploaded photos from /media/ (works while DEBUG = True)
+# added by karthik - development only: serve uploaded photos from /media/ (works while DEBUG = True)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

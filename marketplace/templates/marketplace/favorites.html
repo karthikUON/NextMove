@@ -1,0 +1,19 @@
+{% extends "marketplace/base.html" %}
+{% block title %}My favorites{% endblock %}
+{% block content %}
+<h1 class="h3 fw-bold mb-3">❤️ My favorites</h1>
+
+{% if listings %}
+<p class="text-muted small">{{ listings|length }} saved listing{{ listings|length|pluralize }}</p>
+<div class="row g-3">
+  {% for listing in listings %}
+    {% include "marketplace/_listing_card.html" %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted border rounded">
+  You haven't saved any listings yet.
+  <a href="{% url 'browse' %}" class="text-success">Browse listings</a> and tap the heart to save one.
+</div>
+{% endif %}
+{% endblock %}

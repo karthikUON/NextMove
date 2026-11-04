@@ -6,6 +6,22 @@
 {% if listing.status == "removed" %}
 <div class="alert alert-warning">This listing has been deleted. Only you can see it.</div>
 {% endif %}
+{# a held listing is only visible to its owner and staff #}
+{% if listing.status == "on_hold" %}
+<div class="alert alert-warning">
+    <strong>On hold for review.</strong>
+    This listing contains wording our automatic check flagged, so other students can't see it yet.
+    It will go live once it has been approved.
+</div>
+{% endif %}
+{% if flags %}
+<div class="alert alert-secondary small">
+    <strong>Flagged keywords (staff only):</strong>
+    {% for flag in flags %}
+    <span class="badge bg-warning text-dark">{{ flag.reason }}</span>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="row g-4">
     <div class="col-lg-7">
@@ -30,7 +46,9 @@
 
     <div class="col-lg-5">
         <div class="mb-2">
-            {% if listing.status == "sold" %}<span class="badge bg-secondary">Sold</span>{% endif %}
+            <!-- {% if listing.status == "sold" %}<span class="badge bg-secondary">Sold</span>{% endif %} -->
+            <!-- adding as a component -->
+            {% include "marketplace/_listing_status.html" %}
             {% if listing.is_tradeable %}<span class="badge bg-success">Open to trade</span>{% endif %}
         </div>
 
@@ -53,6 +71,21 @@
             <li>Posted {{ listing.created_at|date:"j M Y" }} by {{ listing.seller.first_name|default:"a UoN student" }}
             </li>
         </ul>
+
+        {# Week 7: logged-in students can save a visible listing, but not their own #}
+        {% if user.is_authenticated %}
+        {% if listing.status == "active" or listing.status == "sold" %}
+        <form method="post" action="{% url 'toggle_favorite' listing.pk %}" class="mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            {% if is_favorited %}
+            <button type="submit" class="btn btn-outline-danger btn-sm">❤️ Saved — remove from favorites</button>
+            {% else %}
+            <button type="submit" class="btn btn-outline-success btn-sm">🤍 Save to favorites</button>
+            {% endif %}
+        </form>
+        {% endif %}
+        {% endif %}
 
         {# owner-only actions #}
         {% if is_owner and listing.status != "removed" %}
