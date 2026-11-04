@@ -10,6 +10,11 @@
       {% endif %}
       {% endwith %}
       <div class="card-body py-2">
+        {% if user.is_authenticated and listing.seller_id == user.id %}
+        <div class="mb-1">
+          {% include "marketplace/_listing_status.html" %}
+        </div>
+        {% endif %}
         <p class="fw-semibold mb-0 text-truncate">{{ listing.title }}</p>
         <p class="text-success fw-bold mb-0">
           {% if listing.price > 0 %}${{ listing.price }}{% else %}Free / Enquire{% endif %}
@@ -18,18 +23,19 @@
         <p class="text-muted small mb-0">{{ listing.category.name }} &middot; {{ listing.get_campus_display }}</p>
       </div>
     </div>
-      {# Week 7: heart button.  #}
-  {# is invalid HTML and would break clicking the card. #}
-  {% if user.is_authenticated %}
-  <form method="post" action="{% url 'toggle_favorite' listing.pk %}"
-        class="position-absolute" style="top:.6rem; right:1.4rem; z-index:2;">
-    {% csrf_token %}
-    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-    <button type="submit" class="btn btn-sm btn-light rounded-circle shadow-sm px-2 py-1"
-            title="{% if listing.pk in favorited_ids %}Remove from favorites{% else %}Save to favorites{% endif %}">
-      {% if listing.pk in favorited_ids %}❤️{% else %}🤍{% endif %}
-    </button>
-  </form>
-  {% endif %}
   </a>
+  {# Week 7: heart button, placed NEXT TO the link (a form inside an <a> is invalid HTML) #}
+    {% if user.is_authenticated %}
+    {% if listing.status == "active" or listing.status == "sold" %}
+    <form method="post" action="{% url 'toggle_favorite' listing.pk %}" class="position-absolute"
+      style="top:.6rem; right:1.4rem; z-index:2;">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button type="submit" class="btn btn-sm btn-light rounded-circle shadow-sm px-2 py-1"
+        title="{% if listing.pk in favorited_ids %}Remove from favorites{% else %}Save to favorites{% endif %}">
+        {% if listing.pk in favorited_ids %}❤️{% else %}🤍{% endif %}
+      </button>
+    </form>
+    {% endif %}
+    {% endif %}
 </div>

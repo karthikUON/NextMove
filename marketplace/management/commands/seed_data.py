@@ -8,13 +8,58 @@ from django.utils import timezone
 from django.utils.text import slugify
 from PIL import Image, ImageDraw, ImageFont
 
-from marketplace.models import Category, Listing, ListingImage
+from marketplace.models import (
+    Category,
+    Listing,
+    ListingImage,
+    ModerationKeyword,
+)
 
 User = get_user_model()
 import textwrap
 
 # Every demo account shares this password. Dev/demo data only: never run this seed on a real deployment.
 DEMO_PASSWORD = "NextMove2026!"
+
+MODERATION_KEYWORDS = {
+    "other": [
+        "ass",
+        "asshole",
+        "fuck",
+        "fucking",
+        "fucker",
+        "shit",
+        "bullshit",
+        "bitch",
+        "bastard",
+        "cunt",
+        "motherfucker",
+    ],
+    "adult": [
+        "porn",
+        "pornography",
+        "xxx",
+        "sex toy",
+        "sex toys",
+    ],
+    "illegal": [
+        "drugs",
+        "cocaine",
+        "heroin",
+        "methamphetamine",
+        "ecstasy",
+        "mdma",
+        "fentanyl",
+        "cannabis",
+        "marijuana",
+        "stolen goods",
+        "fake id",
+    ],
+    "exploitation": [
+        "human trafficking",
+        "child exploitation",
+    ],
+}
 
 CATEGORIES = [
     ("Furniture", "furniture"),
@@ -348,6 +393,13 @@ class Command(BaseCommand):
     help = "Seeds sample users, categories, listings (with sellers, trade info, statuses and photos) across all campuses"
 
     def add_arguments(self, parser):
+
+        parser.add_argument(
+                "--keywords-only",
+                action="store_true",
+                help="Add moderation keywords without creating demo data",
+            )
+        
         parser.add_argument(
             "--reset-photos",
             action="store_true",
@@ -355,6 +407,24 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        added = 0
+        # karthik added this for adding keywords at a time to the table
+        for category, keywords in MODERATION_KEYWORDS.items():
+            for keyword in keywords:
+                _, created = ModerationKeyword.objects.get_or_create(
+                    keyword=keyword,
+                    defaults={"category": category},
+                )
+
+                added += int(created)
+
+        self.stdout.write(
+            self.style.SUCCESS(f"Added {added} moderation keywords.")
+        )
+
+        if options.get("keywords_only"):
+            return
+
         for name, slug in CATEGORIES:
             Category.objects.get_or_create(slug=slug, defaults={"name": name})
         categories = {c.slug: c for c in Category.objects.all()}

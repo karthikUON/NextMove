@@ -1,0 +1,9 @@
+{% if listing.status == "active" %}
+    <span class="badge bg-success">Active</span>
+{% elif listing.status == "on_hold" %}
+    <span class="badge bg-warning text-dark">On hold</span>
+{% elif listing.status == "sold" %}
+    <span class="badge bg-secondary">Sold</span>
+{% elif listing.status == "removed" %}
+    <span class="badge bg-danger">Removed</span>
+{% endif %}

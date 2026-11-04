@@ -12,4 +12,5 @@ urlpatterns = [
     # Week 7: favorites
     path("listings/<int:pk>/favorite/", views.toggle_favorite_view, name="toggle_favorite"),
     path("favorites/", views.favorites_view, name="favorites"),
+    path("my-listings/", views.my_listings_view, name="my_listings"),
 ]

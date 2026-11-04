@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-
+import re
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -52,26 +52,55 @@ class Listing(models.Model):
 
     def __str__(self):
         return self.title
+    # added by chinni for the class using static methods for description
+    # remember the title/description as loaded, so save() can tell whether the text was edited
+    @classmethod
+    def from_db(cls, db, field_names, values, *args, **kwargs):
+        # *args/**kwargs: newer Django versions add arguments (e.g. fetch_mode in 6.1)
+        instance = super().from_db(db, field_names, values, *args, **kwargs)
+        if "title" in field_names and "description" in field_names:
+            instance._loaded_text = (instance.title, instance.description)
+        else:
+            instance._loaded_text = None
+        return instance
 
-    # Week 7: look at the title + description for any banned word.
+    # Week 7: every blocked keyword found in the title or description.
+    # Whole words/phrases only, any case, extra spaces ignored ("ass" must not match "class")
+    # This code comes from  chinni .
     def scan_for_blocked_keywords(self):
-        text = f"{self.title} {self.description}".lower()
+        text = " ".join(f"{self.title} {self.description}".lower().split())
+        found = []
         for kw in ModerationKeyword.objects.all():
-            if kw.keyword.lower() in text:
-                return kw
-        return None
-
-    # Week 7: run the scan automatically whenever an ACTIVE listing is saved.
+            phrase = " ".join(kw.keyword.lower().split())
+            if re.search(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", text):
+                found.append(kw)
+        return found
+    # save the fields and will fo it from them - @chinni
     def save(self, *args, **kwargs):
-        matched = None
-        if self.status == "active":
+        update_fields = kwargs.get("update_fields")
+        touches_text = update_fields is None or bool({"title", "description"} & set(update_fields))
+        text_changed = self._state.adding or getattr(self, "_loaded_text", None) != (self.title, self.description)
+
+        # Scan only when the text is new or was edited. A save that doesn't change the text
+        # (mark as sold, a price edit, staff approving a held listing) must NOT re-scan,
+        # or an approval would be undone straight away.
+        matched = []
+        if touches_text and text_changed and self.status in ("active", "sold"):
             matched = self.scan_for_blocked_keywords()
-            if matched:
-                self.status = "on_hold"
-                self.auto_flagged = True
+        if matched:
+            self.status = "on_hold"
+            self.auto_flagged = True
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"status", "auto_flagged"}
+        elif self.status != "on_hold":
+            self.auto_flagged = False   # an approved listing is no longer "flagged"
+
         super().save(*args, **kwargs)
-        if matched and not self.flags.filter(keyword=matched).exists():
-            ListingFlag.objects.create(listing=self, keyword=matched, reason=matched.keyword)
+
+        for kw in matched:
+            if not self.flags.filter(keyword=kw).exists():
+                ListingFlag.objects.create(listing=self, keyword=kw, reason=kw.keyword)
+        self._loaded_text = (self.title, self.description)
 
     @property
     def primary_image(self):
