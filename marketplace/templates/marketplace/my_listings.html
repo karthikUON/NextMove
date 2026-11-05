@@ -12,41 +12,39 @@
 </div>
 
 <p class="text-muted small">
-    Your listings, including those on hold, sold or removed.
+    Your listings, including those on hold, sold.
     Open a listing to view its details and available actions.
 </p>
 
 {% if page_obj.object_list %}
-    <div class="row g-3">
-        {% for listing in page_obj %}
-            {% include "marketplace/_listing_card.html" %}
-        {% endfor %}
-    </div>
+<div class="row g-3">
+    {% for listing in page_obj %}
+    {% include "marketplace/_listing_card.html" %}
+    {% endfor %}
+</div>
 
-    {% if page_obj.has_other_pages %}
-        <nav class="mt-4" aria-label="My listings pages">
-            {% if page_obj.has_previous %}
-                <a class="btn btn-outline-success btn-sm"
-                   href="?page={{ page_obj.previous_page_number }}">
-                    Previous
-                </a>
-            {% endif %}
-
-            <span class="mx-2">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-
-            {% if page_obj.has_next %}
-                <a class="btn btn-outline-success btn-sm"
-                   href="?page={{ page_obj.next_page_number }}">
-                    Next
-                </a>
-            {% endif %}
-        </nav>
+{% if page_obj.has_other_pages %}
+<nav class="mt-4" aria-label="My listings pages">
+    {% if page_obj.has_previous %}
+    <a class="btn btn-outline-success btn-sm" href="?page={{ page_obj.previous_page_number }}">
+        Previous
+    </a>
     {% endif %}
+
+    <span class="mx-2">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a class="btn btn-outline-success btn-sm" href="?page={{ page_obj.next_page_number }}">
+        Next
+    </a>
+    {% endif %}
+</nav>
+{% endif %}
 {% else %}
-    <div class="text-center py-5 text-muted border rounded">
-        You haven't posted any listings yet.
-    </div>
+<div class="text-center py-5 text-muted border rounded">
+    You haven't posted any listings yet.
+</div>
 {% endif %}
 {% endblock %}

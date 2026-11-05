@@ -1,0 +1,17 @@
+<style>
+    /* Colours come from the admin's own variables, so this also works in dark mode. */
+    .nm-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .nm-card { display: block; padding: 12px 14px; border: 1px solid var(--hairline-color); border-radius: 6px;
+        background: var(--darkened-bg); color: var(--body-fg); text-decoration: none; }
+    a.nm-card:hover { border-color: var(--link-fg); }
+    .nm-alert { border-color: var(--error-fg); }
+    .nm-label { font-size: 12px; color: var(--body-quiet-color); }
+    .nm-number { font-size: 28px; font-weight: 600; line-height: 1.2; }
+    .nm-note { font-size: 12px; color: var(--body-quiet-color); }
+    .nm-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .nm-box h3 { margin: 0 0 6px; }
+    .nm-box ul { margin: 0; padding: 0; list-style: none; }
+    .nm-box li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0;
+        border-bottom: 1px solid var(--hairline-color); }
+    .nm-empty { color: var(--body-quiet-color); }
+</style>

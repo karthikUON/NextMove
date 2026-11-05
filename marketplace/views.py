@@ -55,10 +55,7 @@ def browse_view(request):
             status="on_hold",
         )
 
-    listings = (
-    Listing.objects
-    .filter(status="active")
-    .select_related("category"))
+    listings = Listing.objects.filter(status="active").select_related("category")
     category_slug = request.GET.get("category", "")
     campus = request.GET.get("campus", "")
     q = request.GET.get("q", "")
@@ -108,7 +105,7 @@ def browse_view(request):
 def my_listings_view(request):
     # Only fetch listings created by the logged user added by karthik
     # Includes active, on-hold, sold and removed listings.
-    listings = Listing.objects.filter(seller=request.user).select_related("category")
+    listings = Listing.objects.filter(seller=request.user).exclude(status="removed")
 
     paginator = Paginator(listings, 12)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -139,37 +136,37 @@ def _ensure_primary(listing):
         first.save(update_fields=["is_primary"])
 
 
-@login_required
-# detailed view of the listings
-def listing_detail_view(request, pk):
-    listing = get_object_or_404(
-        Listing.objects.select_related("category", "seller"), pk=pk
-    )
-    # added by chinni for the owners and checking for staf (admin maybe)
-    is_owner = request.user.is_authenticated and listing.seller_id == request.user.id
-    # is_owner = request.user.is_authenticated and listing.seller_id == request.user.id
-    is_staff = request.user.is_authenticated and request.user.is_staff
-    # removed listings: owner only. On-hold listings: owner and staff only.
-    if listing.status == "removed" and not is_owner:
-        raise Http404
-    if listing.status == "on_hold" and not (is_owner or is_staff):
-        raise Http404
-    # renter the listings details
-    return render(
-        request,
-        "marketplace/listing_detail.html",
-        {
-            "listing": listing,
-            "images": list(
-                listing.images.filter(is_deleted=False)
-            ),  # cover photo first
-            "is_owner": is_owner,
-            # added in w7, tells the detail page whether this listing is saved.
-            "is_favorited": request.user.is_authenticated
-            and listing.pk in _favorited_ids(request),
-            "flags": list(listing.flags.all()) if is_staff else [],
-        },
-    )
+# @login_required
+# # detailed view of the listings
+# def listing_detail_view(request, pk):
+#     listing = get_object_or_404(
+#         Listing.objects.select_related("category", "seller"), pk=pk
+#     )
+#     # added by chinni for the owners and checking for staf (admin maybe)
+#     is_owner = request.user.is_authenticated and listing.seller_id == request.user.id
+#     # is_owner = request.user.is_authenticated and listing.seller_id == request.user.id
+#     is_staff = request.user.is_authenticated and request.user.is_staff
+#     # removed listings: owner only. On-hold listings: owner and staff only.
+#     if listing.status == "removed" and not is_owner:
+#         raise Http404
+#     if listing.status == "on_hold" and not (is_owner or is_staff):
+#         raise Http404
+#     # renter the listings details
+#     return render(
+#         request,
+#         "marketplace/listing_detail.html",
+#         {
+#             "listing": listing,
+#             "images": list(
+#                 listing.images.filter(is_deleted=False)
+#             ),  # cover photo first
+#             "is_owner": is_owner,
+#             # added in w7, tells the detail page whether this listing is saved.
+#             "is_favorited": request.user.is_authenticated
+#             and listing.pk in _favorited_ids(request),
+#             "flags": list(listing.flags.all()) if is_staff else [],
+#         },
+#     )
 
 
 # @login_required
@@ -422,6 +419,7 @@ def toggle_favorite_view(request, pk):
 
     return redirect("listing_detail", pk=listing.pk)
 
+
 @login_required
 def favorites_view(request):
     """The 'My favorites' page."""
@@ -441,5 +439,40 @@ def favorites_view(request):
             "listings": listings,
             # tells the user every one here IS a favorite, fav tab
             "favorited_ids": {l.pk for l in listings},
+        },
+    )
+
+
+@login_required
+# detailed view of the listings
+def listing_detail_view(request, pk):
+    listing = get_object_or_404(
+        Listing.objects.select_related("category", "seller"), pk=pk
+    )
+    # added by chinni for the owners and checking for staf (admin maybe)
+    is_owner = request.user.is_authenticated and listing.seller_id == request.user.id
+    # is_owner = request.user.is_authenticated and listing.seller_id == request.user.id
+    is_staff = request.user.is_authenticated and request.user.is_staff
+    # Removed listings (deleted by the seller, or rejected by staff) are gone for everyone, the owner included.
+    # The row stays in the database, so staff can still see it in the admin.
+    if listing.status == "removed":
+        raise Http404
+    # On-hold listings: owner and staff only.
+    if listing.status == "on_hold" and not (is_owner or is_staff):
+        raise Http404
+    # renter the listings details
+    return render(
+        request,
+        "marketplace/listing_detail.html",
+        {
+            "listing": listing,
+            "images": list(
+                listing.images.filter(is_deleted=False)
+            ),  # cover photo first
+            "is_owner": is_owner,
+            # added in w7, tells the detail page whether this listing is saved.
+            "is_favorited": request.user.is_authenticated
+            and listing.pk in _favorited_ids(request),
+            "flags": list(listing.flags.all()) if is_staff else [],
         },
     )

@@ -61,3 +61,14 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message {self.pk} in conversation {self.conversation_id}"
+    
+    @classmethod
+    def unread_count_for(cls, user):
+        """Messages waiting for this user: written by the other person and not opened yet."""
+        return (
+            cls.objects.filter(read_at__isnull=True)
+            .filter(models.Q(conversation__buyer=user) | models.Q(conversation__seller=user))
+            .exclude(sender=user)
+            .count()
+    )
+

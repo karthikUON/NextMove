@@ -9,9 +9,11 @@ class ReportForm(forms.ModelForm):
         fields = ["reason", "details"]
         widgets = {
             "reason": forms.Select(attrs={"class": "form-select"}),
-            "details": forms.Textarea(attrs={
-                "class": "form-control",
-                "rows": 4,
-                "placeholder": "Explain the issue (optional)",
-            }),
+            "details": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Explain the issue (optional)",
+                }
+            ),
         }

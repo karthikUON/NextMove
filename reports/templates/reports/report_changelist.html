@@ -1,0 +1,15 @@
+{% extends "admin/change_list.html" %}
+{% load dashboard_tags %}
+
+{# The Reports list page = Django's normal list with the four dashboard cards on top. #}
+
+{% block extrastyle %}
+{{ block.super }}
+{% include "reports/_dashboard_style.html" %}
+{% endblock %}
+
+{% block content %}
+{% dashboard_stats as dash %}
+{% include "reports/_dashboard_cards.html" %}
+{{ block.super }}
+{% endblock %}
