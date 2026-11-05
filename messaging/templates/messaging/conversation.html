@@ -20,15 +20,35 @@
                 {% endif %}
             </div>
         </div>
+        {# the buyer can raise a problem with this listing / seller at any time (opens the report form) #}
+        {% if can_report %}
+        <a href="{% url 'report_listing' conversation.listing.pk %}" class="small text-muted text-decoration-none">
+            &#9873; Report this listing
+        </a>
+        {% endif %}
     </div>
 </div>
 
-<div id="thread" class="border rounded bg-white p-3 mb-3" style="max-height:60vh; overflow-y:auto;">
+{# Scam shield: shown when a message FROM THE OTHER PERSON looks like a common scam. Nothing is stored. #}
+<div id="scam-banner" class="alert alert-warning small{% if not has_scam %} d-none{% endif %}" role="alert">
+    <strong>Be careful.</strong> A message in this chat looks like a common scam.
+    Never send money, gift cards or codes before you have met and checked the item,
+    and keep chat and payment on NextMove.
+    {% if can_report %}
+    <a href="{% url 'report_listing' conversation.listing.pk %}?reason=scam" class="alert-link">Report this listing</a>
+    {% endif %}
+</div>
+
+<div id="thread" class="border rounded bg-white p-3 mb-2" style="max-height:60vh; overflow-y:auto;"
+    data-poll-url="{% url 'messages_since' conversation.pk %}" data-last-id="{{ last_id }}" data-poll-ms="3000">
     {% for m in thread %}
-    <div class="d-flex mb-2 {% if m.sender_id == user.id %}justify-content-end{% endif %}">
+    <div class="d-flex mb-2 {% if m.sender_id == user.id %}justify-content-end{% endif %}" data-id="{{ m.id }}">
         <div class="px-3 py-2 rounded-3 {% if m.sender_id == user.id %}bg-success text-white{% else %}bg-light border{% endif %}"
             style="max-width:80%;">
             <div>{{ m.body|linebreaksbr }}</div>
+            {% if m.scam %}
+            <div class="small text-danger mt-1">&#9888; {{ m.scam|join:"; " }}</div>
+            {% endif %}
             <div class="small {% if m.sender_id == user.id %}text-white-50{% else %}text-muted{% endif %}">
                 {{ m.created_at|date:"j M, g:i a" }}
             </div>
@@ -36,26 +56,198 @@
     </div>
     {% endfor %}
 </div>
+<button type="button" id="new-hint" class="btn btn-success btn-sm mb-2 d-none">New messages &darr;</button>
 
 {% if can_reply %}
-<form method="post" action="{% url 'send_message' conversation.pk %}">
+<form method="post" id="reply-form" action="{% url 'send_message' conversation.pk %}">
     {% csrf_token %}
     {{ form.body }}
     <button type="submit" class="btn btn-success btn-sm mt-2">Send</button>
 </form>
-{% else %}
-<div class="alert alert-secondary small mb-0">This listing is no longer available, so new messages can't be sent.</div>
 {% endif %}
+<div id="chat-error" class="text-danger small mt-2"></div>
+<div id="closed-notice" class="alert alert-secondary small mt-2 mb-0{% if can_reply %} d-none{% endif %}">
+    This listing is no longer available, so new messages can't be sent.
+</div>
 
 <script>
-    // start at the newest message
-    var thread = document.getElementById('thread');
-    thread.scrollTop = thread.scrollHeight;
-</script>
-<script>
-    setInterval(function () {
-        var box = document.querySelector('textarea');
-        if (!document.hidden && box && !box.value) { location.reload(); }
-    }, 5000);
+    // Live chat in plain JavaScript: checks for new messages every few seconds and sends without reloading.
+    // Without JavaScript the page still works: the form posts normally and you refresh to see replies.
+    (function () {
+        var thread = document.getElementById('thread');
+        var form = document.getElementById('reply-form');
+        var hint = document.getElementById('new-hint');
+        var errorBox = document.getElementById('chat-error');
+        var closedNotice = document.getElementById('closed-notice');
+        var badge = document.getElementById('unread-badge');
+        var scamBanner = document.getElementById('scam-banner');
+
+        var pollUrl = thread.getAttribute('data-poll-url');
+        var baseDelay = Math.max(250, parseInt(thread.getAttribute('data-poll-ms') || '3000', 10));
+        var delay = baseDelay;
+        var lastId = parseInt(thread.getAttribute('data-last-id') || '0', 10);
+        var seen = {};
+        var timer = null;
+        var inFlight = false;
+        var stopped = false;
+        var sending = false;
+
+        Array.prototype.forEach.call(thread.querySelectorAll('[data-id]'), function (row) {
+            seen[row.getAttribute('data-id')] = true;
+        });
+
+        function nearBottom() {
+            return thread.scrollHeight - thread.scrollTop - thread.clientHeight < 80;
+        }
+        function scrollToBottom() {
+            thread.scrollTop = thread.scrollHeight;
+        }
+        function showError(text) {
+            errorBox.textContent = text || '';
+        }
+        // scam shield: reveal the warning banner (the banner is always in the page, hidden until needed)
+        function showScamBanner() {
+            if (scamBanner) { scamBanner.classList.remove('d-none'); }
+        }
+        function setBadge(count) {
+            if (badge) {
+                badge.textContent = count;
+                badge.classList.toggle('d-none', !count);
+            }
+        }
+
+        // adds one message to the page; returns true if it was new
+        function addMessage(m) {
+            if (seen[m.id]) { return false; }
+            seen[m.id] = true;
+            if (m.id > lastId) { lastId = m.id; }
+            var row = document.createElement('div');
+            row.className = 'd-flex mb-2' + (m.mine ? ' justify-content-end' : '');
+            row.setAttribute('data-id', m.id);
+            var bubble = document.createElement('div');
+            bubble.className = 'px-3 py-2 rounded-3 ' + (m.mine ? 'bg-success text-white' : 'bg-light border');
+            bubble.style.maxWidth = '80%';
+            var body = document.createElement('div');
+            body.style.whiteSpace = 'pre-wrap';
+            body.textContent = m.body;  // text only, so a message can never inject HTML
+            var time = document.createElement('div');
+            time.className = 'small ' + (m.mine ? 'text-white-50' : 'text-muted');
+            time.textContent = m.time;
+            bubble.appendChild(body);
+            if (m.warnings && m.warnings.length) {
+                // scam shield: the reasons are plain text sent by the server, shown under the message
+                var warn = document.createElement('div');
+                warn.className = 'small text-danger mt-1';
+                warn.textContent = '\u26A0 ' + m.warnings.join('; ');
+                bubble.appendChild(warn);
+                showScamBanner();
+            }
+            bubble.appendChild(time);
+            row.appendChild(bubble);
+            thread.appendChild(row);
+            return true;
+        }
+
+        function readJson(response) {
+            return response.json().then(
+                function (data) { return { status: response.status, ok: response.ok, data: data }; },
+                function () { return { status: response.status, ok: false, data: {} }; }
+            );
+        }
+
+        function schedule() {
+            clearTimeout(timer);
+            if (!stopped) { timer = setTimeout(poll, delay); }
+        }
+
+        function poll() {
+            if (stopped) { return; }
+            if (document.hidden || inFlight) { schedule(); return; }
+            inFlight = true;
+            fetch(pollUrl + '?after=' + lastId, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+                .then(readJson)
+                .then(function (res) {
+                    if (res.status === 401 || res.status === 404) {
+                        stopped = true;
+                        showError('This page is out of date. Please refresh it (you may need to log in again).');
+                        return;
+                    }
+                    if (!res.ok) { delay = Math.min(delay * 2, 30000); return; }
+                    var wasNearBottom = nearBottom();
+                    var added = false;
+                    var fromOther = false;
+                    res.data.messages.forEach(function (m) {
+                        if (addMessage(m)) {
+                            added = true;
+                            if (!m.mine) { fromOther = true; }
+                        }
+                    });
+                    if (added) {
+                        if (wasNearBottom) { scrollToBottom(); }
+                        else if (fromOther) { hint.classList.remove('d-none'); }
+                    }
+                    if (typeof res.data.unread_total === 'number') { setBadge(res.data.unread_total); }
+                    if (res.data.can_reply === false) {
+                        if (form) { form.classList.add('d-none'); }
+                        closedNotice.classList.remove('d-none');
+                    }
+                    delay = baseDelay;
+                })
+                .catch(function () { delay = Math.min(delay * 2, 30000); })  // offline: wait longer, keep trying
+                .then(function () { inFlight = false; schedule(); });
+        }
+
+        // stop asking while the tab is hidden; ask straight away when you come back
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && !stopped) { clearTimeout(timer); poll(); }
+        });
+        thread.addEventListener('scroll', function () {
+            if (nearBottom()) { hint.classList.add('d-none'); }
+        });
+        hint.addEventListener('click', function () {
+            scrollToBottom();
+            hint.classList.add('d-none');
+        });
+
+        if (form) {
+            var box = form.querySelector('textarea');
+            var button = form.querySelector('button[type="submit"]');
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                if (sending || !box.value.trim()) { return; }
+                sending = true;
+                button.disabled = true;
+                showError('');
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                    .then(readJson)
+                    .then(function (res) {
+                        if (res.ok && res.data.ok) {
+                            addMessage(res.data.message);
+                            box.value = '';
+                            scrollToBottom();
+                        } else {
+                            showError(res.data.error || 'Your message could not be sent. Please refresh the page.');
+                        }
+                    })
+                    .catch(function () { showError('Network problem: your message was not sent. Please try again.'); })
+                    .then(function () { sending = false; button.disabled = false; box.focus(); });
+            });
+            // Enter sends, Shift+Enter makes a new line
+            box.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    form.requestSubmit();
+                }
+            });
+        }
+
+        scrollToBottom();
+        schedule();
+    })();
 </script>
 {% endblock %}

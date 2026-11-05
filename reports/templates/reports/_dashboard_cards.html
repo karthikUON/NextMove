@@ -1,0 +1,22 @@
+{# The four number cards. Used on the admin home page and on the Reports list. Needs the variable "dash". #}
+<div class="nm-cards">
+    <div class="nm-card">
+        <div class="nm-label">Students</div>
+        <div class="nm-number">{{ dash.stats.students }}</div>
+    </div>
+    <div class="nm-card">
+        <div class="nm-label">Active listings</div>
+        <div class="nm-number">{{ dash.stats.active }}</div>
+        <div class="nm-note">+{{ dash.stats.new_listings }} posted this week</div>
+    </div>
+    <a class="nm-card{% if dash.stats.held %} nm-alert{% endif %}"
+        href="{% url 'admin:marketplace_listing_changelist' %}?status__exact=on_hold">
+        <div class="nm-label">Held for review</div>
+        <div class="nm-number">{{ dash.stats.held }}</div>
+    </a>
+    <a class="nm-card{% if dash.stats.open_reports %} nm-alert{% endif %}"
+        href="{% url 'admin:reports_report_changelist' %}?status__exact=open">
+        <div class="nm-label">Open reports</div>
+        <div class="nm-number">{{ dash.stats.open_reports }}</div>
+    </a>
+</div>

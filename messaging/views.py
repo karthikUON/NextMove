@@ -1,73 +1,113 @@
 from datetime import timedelta
+from functools import wraps
 
+from django.apps import apps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, OuterRef, Q, Subquery
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.defaultfilters import date as date_filter
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST
 
 from marketplace.models import Listing
 
 from .forms import MessageForm
 from .models import MAX_MESSAGE_LENGTH, Conversation, Message
+from .scam import scam_warnings
 
 # simple spam brake: at most this many messages per person per minute
 RATE_LIMIT = 10
 
 
-# if sending too fast
+def json_login_required(view):
+    """Like login_required, but answers with a JSON 401 instead of redirecting (for the script's requests)."""
+
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "login"}, status=401)
+        return view(request, *args, **kwargs)
+
+    return wrapper
+
+
+def _is_ajax(request):
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def _message_json(message, me):
+    mine = message.sender_id == me.id
+    return {
+        "id": message.id,
+        "mine": mine,
+        "body": message.body,  # plain text: the page script inserts it as text, never as HTML
+        "time": date_filter(timezone.localtime(message.created_at), "j M, g:i a"),
+        # scam shield: only the person who RECEIVED a message is warned about it (nothing is stored)
+        "warnings": [] if mine else scam_warnings(message.body),
+    }
+
+
+def _can_report_listing(conversation, user):
+    """Show "Report this listing" in the scam warning only to the buyer, for a listing that can still be reported."""
+    if user.id != conversation.buyer_id or conversation.listing.status not in (
+        "active",
+        "sold",
+    ):
+        return False
+    if not apps.is_installed("reports"):  # the reports app is optional
+        return False
+    from reports.models import Report
+
+    return not Report.objects.filter(
+        listing=conversation.listing, reporter=user, status="open"
+    ).exists()
+
+
 def _sending_too_fast(user):
     since = timezone.now() - timedelta(minutes=1)
-    # check the late limit
     return (
         Message.objects.filter(sender=user, created_at__gte=since).count() >= RATE_LIMIT
     )
 
 
-# send the message
 def _send(conversation, sender, body):
     now = timezone.now()
     message = Message.objects.create(
         conversation=conversation, sender=sender, body=body
     )
-    # update the last message to now.
     Conversation.objects.filter(pk=conversation.pk).update(last_message_at=now)
     return message
 
 
 @login_required
 @require_POST
-# start the conversation
 def start_conversation_view(request, listing_pk):
     """'Message seller' on a listing: starts the chat (or reuses the one you already have) and sends the first message."""
-    # new chats only on listings that are only active
+    # new chats only on listings that are live
     listing = get_object_or_404(Listing, pk=listing_pk, status="active")
-    # adding condition t check message to own listings
     if listing.seller_id is None or listing.seller_id == request.user.id:
         messages.info(request, "You can't message yourself about your own listing.")
         return redirect("listing_detail", pk=listing.pk)
-    # create the form object
+
     form = MessageForm(request.POST)
-    # check if it is valid or not
     if not form.is_valid():
         messages.error(
             request, f"Please write a message (up to {MAX_MESSAGE_LENGTH} characters)."
         )
         return redirect("listing_detail", pk=listing.pk)
-    # check if sending too fast
     if _sending_too_fast(request.user):
         messages.error(
             request, "You're sending messages too quickly. Please wait a minute."
         )
         return redirect("listing_detail", pk=listing.pk)
-    # create the conversation object 
+
     conversation, _ = Conversation.objects.get_or_create(
         listing=listing, buyer=request.user, defaults={"seller_id": listing.seller_id}
     )
-    # send the object to the user along with the form data
     _send(conversation, request.user, form.cleaned_data["body"])
     messages.success(request, "Message sent.")
     return redirect("conversation", pk=conversation.pk)
@@ -75,13 +115,10 @@ def start_conversation_view(request, listing_pk):
 
 @login_required
 def inbox_view(request):
-    # get the user
     me = request.user
-    # order the message in the newest
     newest = Message.objects.filter(conversation=OuterRef("pk")).order_by(
         "-created_at", "-id"
     )
-    # copied this from online to show according how to arrange the message
     conversations = (
         Conversation.objects.filter(Q(buyer=me) | Q(seller=me))
         .select_related("listing", "buyer", "seller")
@@ -116,17 +153,63 @@ def conversation_view(request, pk):
         sender=request.user
     ).update(read_at=timezone.now())
 
+    thread = list(conversation.messages.select_related("sender"))
+    for m in thread:
+        # scam shield: warn the person who RECEIVED a message that looks like a scam (nothing is stored)
+        m.scam = [] if m.sender_id == request.user.id else scam_warnings(m.body)
+
     return render(
         request,
         "messaging/conversation.html",
         {
             "conversation": conversation,
-            "thread": conversation.messages.select_related("sender"),
+            "thread": thread,
+            "has_scam": any(m.scam for m in thread),
+            "can_report": _can_report_listing(conversation, request.user),
+            "last_id": thread[-1].id if thread else 0,
             "other": conversation.other_party(request.user),
             "can_reply": conversation.can_reply(),
             "form": MessageForm(),
         },
     )
+
+
+@never_cache
+@require_GET
+@json_login_required
+def messages_since_view(request, pk):
+    """The chat page asks this every few seconds: 'anything newer than message <after>?'"""
+    conversation = get_object_or_404(
+        Conversation.objects.select_related("listing"), pk=pk
+    )
+    if not conversation.is_participant(request.user):
+        raise Http404
+    try:
+        after = int(request.GET.get("after", 0))
+    except ValueError:
+        after = 0
+
+    new = list(conversation.messages.filter(id__gt=after).order_by("id"))
+    # the person has the chat open, so what the other side wrote counts as read
+    conversation.messages.filter(read_at__isnull=True).exclude(
+        sender=request.user
+    ).update(read_at=timezone.now())
+    return JsonResponse(
+        {
+            "messages": [_message_json(m, request.user) for m in new],
+            "last_id": new[-1].id if new else after,
+            "can_reply": conversation.can_reply(),
+            "unread_total": Message.unread_count_for(request.user),
+        }
+    )
+
+
+@never_cache
+@require_GET
+@json_login_required
+def unread_count_view(request):
+    """The navbar badge asks this every so often."""
+    return JsonResponse({"unread": Message.unread_count_for(request.user)})
 
 
 @login_required
@@ -137,22 +220,31 @@ def send_message_view(request, pk):
     )
     if not conversation.is_participant(request.user):
         raise Http404
-    if not conversation.can_reply():
-        messages.error(
-            request,
-            "This listing is no longer available, so you can't send new messages.",
-        )
+    ajax = _is_ajax(
+        request
+    )  # the page script sends with fetch(); a plain form post still works without JavaScript
+
+    def refuse(error, status):
+        if ajax:
+            return JsonResponse({"ok": False, "error": error}, status=status)
+        messages.error(request, error)
         return redirect("conversation", pk=conversation.pk)
 
+    if not conversation.can_reply():
+        return refuse(
+            "This listing is no longer available, so you can't send new messages.", 409
+        )
     form = MessageForm(request.POST)
     if not form.is_valid():
-        messages.error(
-            request, f"Please write a message (up to {MAX_MESSAGE_LENGTH} characters)."
+        return refuse(
+            f"Please write a message (up to {MAX_MESSAGE_LENGTH} characters).", 400
         )
-    elif _sending_too_fast(request.user):
-        messages.error(
-            request, "You're sending messages too quickly. Please wait a minute."
+    if _sending_too_fast(request.user):
+        return refuse("You're sending messages too quickly. Please wait a minute.", 429)
+
+    message = _send(conversation, request.user, form.cleaned_data["body"])
+    if ajax:
+        return JsonResponse(
+            {"ok": True, "message": _message_json(message, request.user)}
         )
-    else:
-        _send(conversation, request.user, form.cleaned_data["body"])
     return redirect("conversation", pk=conversation.pk)

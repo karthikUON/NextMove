@@ -1,0 +1,64 @@
+{% extends "admin/index.html" %}
+{% load dashboard_tags %}
+
+{# The admin home page = Django's normal page with our dashboard added at the top. #}
+
+{% block extrastyle %}
+{{ block.super }}
+{% include "reports/_dashboard_style.html" %}
+{% endblock %}
+
+{% block content %}
+{% dashboard_stats as dash %}
+
+<h2>Dashboard</h2>
+
+{# four number cards; the last two are links to the admin lists they count #}
+{% include "reports/_dashboard_cards.html" %}
+
+<div class="nm-lists">
+    {# listings waiting for a decision #}
+    <div class="nm-box">
+        <h3>Held listings waiting for review</h3>
+        <ul>
+            {% for listing in dash.held %}
+            <li>
+                <a href="{% url 'admin:marketplace_listing_change' listing.pk %}">{{ listing.title }}</a>
+                <span class="nm-note">{{ listing.seller.email|default:"no seller" }}</span>
+            </li>
+            {% empty %}
+            <li class="nm-empty">Nothing is waiting.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {# listings that students have reported #}
+    <div class="nm-box">
+        <h3>Most reported listings</h3>
+        <ul>
+            {% for listing in dash.most_reported %}
+            <li>
+                <a href="{% url 'admin:marketplace_listing_change' listing.pk %}">{{ listing.title }}</a>
+                <strong>{{ listing.open_reports }}</strong>
+            </li>
+            {% empty %}
+            <li class="nm-empty">No open reports.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {# all listings by status #}
+    <div class="nm-box">
+        <h3>All listings by status</h3>
+        <ul>
+            <li>Active <strong>{{ dash.stats.active }}</strong></li>
+            <li>Sold <strong>{{ dash.stats.sold }}</strong></li>
+            <li>On hold <strong>{{ dash.stats.held }}</strong></li>
+            <li>Removed <strong>{{ dash.stats.removed }}</strong></li>
+        </ul>
+    </div>
+</div>
+
+{# Django's normal list of apps and models goes below #}
+{{ block.super }}
+{% endblock %}

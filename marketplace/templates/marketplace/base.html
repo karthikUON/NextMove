@@ -104,12 +104,6 @@
             <a class="nav-link {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}"
               href="{% url 'favorites' %}">❤️ Saved</a>
           </li>
-           {% if user.is_staff %}
-          <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-              href="{% url 'dashboard' %}">Dashboard</a>
-          </li>
-          {% endif %}
           <!-- added by karthik for my -->
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'my_listings' %}active{% endif %}"
@@ -121,7 +115,11 @@
           {% unread_message_count as unread %}
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}"
-              href="{% url 'inbox' %}">Messages{% if unread %} <span class="badge bg-danger">{{ unread }}</span>{% endif%}</a>
+              href="{% url 'inbox' %}">
+              Messages
+              <span id="unread-badge"
+                class="badge bg-danger{% if not unread %} d-none{% endif %}">{{ unread }}</span>
+            </a>
           </li>
           {% endif %}
         </ul>
