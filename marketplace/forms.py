@@ -45,7 +45,7 @@ class ListingForm(forms.ModelForm):
 
     class Meta:
         model = Listing
-        fields = ["title", "description", "category", "price", "campus", "location", "is_tradeable", "trade_notes"]
+        fields = ["title", "description", "category", "price", "campus", "location", "is_tradeable", "trade_notes", "status"]
         labels = {"is_tradeable": "Open to trade", "trade_notes": "What would you trade for?"}
         widgets = {"description": forms.Textarea(attrs={"rows": 5})}
 
@@ -66,6 +66,13 @@ class ListingForm(forms.ModelForm):
             # Title, description, price, photos
             else:
                 widget.attrs["class"] = "form-control"
+        # Status dropdown: only when EDITING a listing that is Active or Sold, and only those two choices.
+        # "On hold" and "Removed" are decided by staff, so a seller can never pick them (or un-hold a listing).
+        if self.instance.pk and self.instance.status in ("active", "sold"):
+            self.fields["status"].choices = [("active", "Active"), ("sold", "Sold")]
+            self.fields["status"].widget.attrs["class"] = "form-select"
+        else:
+            del self.fields["status"]
 
     def clean_price(self):
         price = self.cleaned_data["price"]

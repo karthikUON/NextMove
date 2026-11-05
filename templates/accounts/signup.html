@@ -17,5 +17,9 @@
     {% endfor %}
     <button type="submit" class="btn btn-success w-100">Create account</button>
   </form>
+  <p class="text-center text-muted small mt-3 mb-0">
+    Already have an account?
+    <a href="{% url 'login' %}">Log in</a>
+</p>
 </div>
 {% endblock %}

@@ -62,6 +62,7 @@ class Listing(models.Model):
             instance._loaded_text = (instance.title, instance.description)
         else:
             instance._loaded_text = None
+        instance._loaded_status = instance.status if "status" in field_names else None
         return instance
 
     # Week 7: every blocked keyword found in the title or description.
@@ -85,7 +86,9 @@ class Listing(models.Model):
         # (mark as sold, a price edit, staff approving a held listing) must NOT re-scan,
         # or an approval would be undone straight away.
         matched = []
-        if touches_text and text_changed and self.status in ("active", "sold"):
+        # A sold listing put back on sale is checked again too (the keyword list may have changed since it was posted).
+        reopened = getattr(self, "_loaded_status", None) == "sold" and self.status == "active"
+        if ((touches_text and text_changed) or reopened) and self.status in ("active", "sold"):
             matched = self.scan_for_blocked_keywords()
         if matched:
             self.status = "on_hold"
@@ -101,6 +104,7 @@ class Listing(models.Model):
             if not self.flags.filter(keyword=kw).exists():
                 ListingFlag.objects.create(listing=self, keyword=kw, reason=kw.keyword)
         self._loaded_text = (self.title, self.description)
+        self._loaded_status = self.status
 
     @property
     def primary_image(self):

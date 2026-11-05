@@ -23,24 +23,13 @@ DEMO_PASSWORD = "NextMove2026!"
 
 MODERATION_KEYWORDS = {
     "other": [
-        "ass",
-        "asshole",
-        "fuck",
-        "fucking",
-        "fucker",
         "shit",
         "bullshit",
-        "bitch",
         "bastard",
-        "cunt",
-        "motherfucker",
     ],
     "adult": [
         "porn",
         "pornography",
-        "xxx",
-        "sex toy",
-        "sex toys",
     ],
     "illegal": [
         "drugs",
@@ -54,6 +43,33 @@ MODERATION_KEYWORDS = {
         "marijuana",
         "stolen goods",
         "fake id",
+        "crystal meth",
+        "meth",
+        "shabu",
+        "nose candy",
+        "white snow",
+        "white lady",
+        "molly",
+        "mandy",
+        "pingas",
+        "pingers",
+        "disco biscuits",
+        "weed",
+        "ganja",
+        "kush",
+        "ketamine",
+        "special k",
+        "lsd",
+        "magic mushrooms",
+        "shrooms",
+        "psilocybin",
+        "smack",
+        "xannies",
+        "xans",
+        "xanax bars",
+        "benzos",
+        "oxy",
+        "percs",
     ],
     "exploitation": [
         "human trafficking",
@@ -395,11 +411,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-                "--keywords-only",
-                action="store_true",
-                help="Add moderation keywords without creating demo data",
-            )
-        
+            "--keywords-only",
+            action="store_true",
+            help="Add moderation keywords without creating demo data",
+        )
+
         parser.add_argument(
             "--reset-photos",
             action="store_true",
@@ -418,9 +434,7 @@ class Command(BaseCommand):
 
                 added += int(created)
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Added {added} moderation keywords.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Added {added} moderation keywords."))
 
         if options.get("keywords_only"):
             return
@@ -468,7 +482,7 @@ class Command(BaseCommand):
                 for field, value in fields.items():
                     setattr(listing, field, value)
                 listing.save()
-                
+
             if options.get("reset_photos"):
                 for old in listing.images.all():
                     old.image.delete(save=False)  # remove the file too
