@@ -1,0 +1,22 @@
+{% extends "marketplace/base.html" %}
+
+{% block title %}Report listing{% endblock %}
+
+{% block content %}
+<h1 class="h4">Report listing</h1>
+<p class="text-muted">{{ listing.title }}</p>
+
+<form method="post" action="{% url 'report_listing' listing.pk %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-danger">
+        Submit report
+    </button>
+
+    <a href="{% url 'listing_detail' listing.pk %}"
+       class="btn btn-outline-secondary">
+        Cancel
+    </a>
+</form>
+{% endblock %}

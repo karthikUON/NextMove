@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "marketplace",
     "accounts",
     "messaging",
+    "reports"
 ]
 
 MIDDLEWARE = [

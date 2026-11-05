@@ -8,6 +8,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("", include("messaging.urls")),
     path("", include("marketplace.urls")),
+    path("", include("reports.urls")),
 ]
 
 # development only: serve uploaded photos from /media/ (works while DEBUG = True)

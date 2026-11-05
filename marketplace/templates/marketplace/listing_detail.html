@@ -108,6 +108,16 @@
         {% message_seller_box listing %}
     </div>
 </div>
+{% if user.is_authenticated and not is_owner %}
+    {% if listing.status == "active" or listing.status == "sold" %}
+        <div class="mt-3">
+            <a href="{% url 'report_listing' listing.pk %}"
+               class="btn btn-outline-danger btn-sm">
+                Report listing
+            </a>
+        </div>
+    {% endif %}
+{% endif %}
 
 <hr>
 <h2 class="h5">Description</h2>
